@@ -1,8 +1,9 @@
 from django.shortcuts import redirect, render, get_object_or_404
 from .forms import *
-from employee.models import Employee,Attendance,Notice,workAssignments
+from employee.models import Employee,Attendance,Notice,workAssignments,Requests
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
 
 # Create your views here.
 @login_required(login_url='/')
@@ -28,11 +29,8 @@ def noticedetail(request,id):
 @login_required(login_url='/')
 def assignWork(request):
     context={}
-    initialData = {
-        "assignerId" : request.user.username,
-    }
     flag = ""
-    form = workform(request.POST or None, initial=initialData)
+    form = workform(request.POST or None)
     if form.is_valid():
         currentTaskerId = request.POST["taskerId"]
         currentUserId = request.user.username
@@ -40,7 +38,9 @@ def assignWork(request):
             flag="Invalid ID Selected..."
         else:
             flag = "Work Assigned Successfully!!"
-            form.save()
+            work = form.save(commit=False)
+            work.assignerId_id = currentUserId
+            work.save()
 
     context['form']=form
     context['flag'] = flag
@@ -53,17 +53,16 @@ def mywork(request):
 
 @login_required(login_url='/')
 def workdetails(request,wid):
-    workdetails = workAssignments.objects.get(id=wid);
+    workdetails = get_object_or_404(workAssignments, id=wid)
+    if request.user.username not in (workdetails.assignerId_id, workdetails.taskerId_id):
+        return HttpResponseForbidden()
     return render(request,"employee/workdetails.html",{"workdetails":workdetails})
 
 @login_required(login_url='/')
 def makeRequest(request):
     context={}
-    initialData = {
-        "requesterId" : request.user.username,
-    }
     flag = ""
-    requestForm = makeRequestForm(request.POST or None, initial=initialData)
+    requestForm = makeRequestForm(request.POST or None)
     if request.method == 'POST':
         requestForm = makeRequestForm(request.POST)
         if requestForm.is_valid():
@@ -73,7 +72,9 @@ def makeRequest(request):
                 flag="Invalid ID Selected..."
             else:
                 flag="Request Submitted"
-                requestForm.save()
+                requestObj = requestForm.save(commit=False)
+                requestObj.requesterId_id = currentUserId
+                requestObj.save()
 
     context['requestForm']=requestForm
     context['flag'] = flag
@@ -86,7 +87,9 @@ def viewRequest(request):
 
 @login_required(login_url='/')
 def requestdetails(request,rid):
-    requestdetail = Requests.objects.get(id=rid)
+    requestdetail = get_object_or_404(Requests, id=rid)
+    if request.user.username not in (requestdetail.requesterId_id, requestdetail.destinationEmployeeId_id):
+        return HttpResponseForbidden()
     return render(request,"employee/requestdetails.html",{"requestdetail":requestdetail})
 
 @login_required(login_url='/')
@@ -97,12 +100,16 @@ def assignedworklist(request):
 @login_required(login_url='/')
 def deletework(request, wid):
     obj = get_object_or_404(workAssignments, id=wid)
+    if request.user.username != obj.assignerId_id:
+        return HttpResponseForbidden()
     obj.delete()
     return render(request,"employee/assignedworklist.html")
 
 @login_required(login_url='/')
 def updatework(request,wid):
-    work = workAssignments.objects.get(id=wid)
+    work = get_object_or_404(workAssignments, id=wid)
+    if request.user.username != work.assignerId_id:
+        return HttpResponseForbidden()
     form = workform(request.POST or None, instance=work)
     flag = ""
     if form.is_valid():
