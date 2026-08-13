@@ -8,9 +8,6 @@ from django.core.cache import cache
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_SECONDS = 300
 
-import subprocess
-subprocess.call("ls -la", shell=True)   # Bandit flags this: B602, subprocess call with shell=True
-
 # Create your views here.
 def login_user(request):
     if request.method == "POST":
