@@ -20,8 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%^gyhbwyl$qwe@+-d5igur&1wj*pr-dp^em0@i$&d36)&q_e%2'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'uc5y2vbruzyq_spnh#y!%-6k7+ac(wg252lw0avmno*r_!81ie'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -82,7 +84,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'empdb',
         'USER': 'postgres',
-        'PASSWORD': 'postgres',
+        'PASSWORD': '',
         'HOST': 'localhost',
     }
 }
