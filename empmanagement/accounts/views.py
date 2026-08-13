@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate,login,logout
 from django.contrib import messages
 from django.core.cache import cache
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_SECONDS = 300
@@ -55,6 +57,11 @@ def signup(request):
         )
 
         if can_register:
+            try:
+                validate_password(password)
+            except ValidationError as e:
+                messages.info(request, " ".join(e.messages))
+                return redirect("/signup")
             user = User.objects.create_user(username=id,password=password)
             user.save()
             messages.info(request,"Registered Successfully")
